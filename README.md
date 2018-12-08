@@ -5,7 +5,7 @@ YouTube has decided to outlaw ~fun~annotations on their platform. This project c
 
 There are two main parts to this project:
 
- - _anno.py:_ A python script that builds off of [youtube-dl](https://rg3.github.io/youtube-dl/) to download annotations and metadata (but not the video files or any other data for videos. It also parses out any links to other videos in those annotations, and downloads them. This is useful for interactive videos based on annotations, which may have dozens of videos linking to each other in a tree/graph like fashion.
+ - _anno.py:_ A python script that builds off of [youtube-dl](https://rg3.github.io/youtube-dl/) to download annotations and metadata, but not the video files or any other data for videos. It also parses out any links to other videos in those annotations, and downloads them. This is useful for interactive videos based on annotations, which may have dozens of videos linking to each other in a tree/graph like fashion.
  - _render/:_ HTML/Javascript that can render the annotations on top of a YouTube embed. Used to ensure that annotations are downloaded properly.
  
 There are some other resources that may be useful:
