@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+<!--<script src='anno_zy3jKKqAJ3U.json'></script>-->
+
+<!--<script src='anno_zxYXg5vhqjw.json'></script>-->
+
+<!--<script src='anno_6pv2qxbiabc.json'></script>-->
+
+<!--<script src='anno_M2ryDEyyrXE.json'></script>-->
+
+<script src='parse.js'></script>
+
+<script src='render.js'></script>
+
+<style>
+
+* {
+	box-sizing: border-box;
+}
+
+#anno_render {
+	width: 640px;
+	height: 480px;
+	background: #ccc;
+	
+	position: relative;
+}
+
+#anno_render .text_annotation {
+	padding: 5px;
+	position: absolute;
+}
+
+html,body{height:100%;}
+
+</style>
+
+</head>
+
+<body>
+
+<button id='restart_button' onclick='RenderAnnotations()'>GO TO START</button>
+<button id='pause_play_button'>Pause</button>
+
+<input id='vid_time' type="range" step='0.1' min="0" max="150" value="0"/>
+
+<p id='vid_time_label'>0 seconds</p>
+
+<input id='myFile' type='file' oninput='onFileInput()'/>
+
+<br/>
+<br/>
+<br/>
+
+<div id="anno_render"></div>
+
+</body>
+
+</html>
