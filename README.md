@@ -20,3 +20,15 @@ Some examples of videos that use annotations in various ways:
  - [The last annotations On YouTube (another video with the same name...)](https://www.youtube.com/watch?v=M2ryDEyyrXE)
  - [Interactive Youtube Shooter Game! | Vixolent](https://www.youtube.com/watch?v=iCnlAC4OM38)
  - [Sonic (Annotation Art)](https://www.youtube.com/watch?v=NsPoyMzsVOU)
+ 
+TODO for rendering layer:
+
+ - have youtube embed aligned to annotations
+ - general links
+ - font size issues
+ - highlight annotation borders
+ - text colour
+ - pause type annotations
+ - speech bubbles w/ proper anchors
+ - make title/label stuff are rendering properly
+ 

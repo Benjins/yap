@@ -23,14 +23,27 @@
 
 #anno_render {
 	width: 640px;
-	height: 480px;
-	background: #ccc;
+	height: 360px;
+	background: rgba(200, 200, 200, 0.1);
 	
 	position: relative;
 }
 
+#anno_render * {
+	z-index: 100;
+}
+
 #anno_render .text_annotation {
 	padding: 5px;
+	position: absolute;
+}
+
+#anno_player_container {
+	position: relative;
+}
+
+#ytplayer {
+	top: 0px;
 	position: absolute;
 }
 
@@ -55,7 +68,36 @@ html,body{height:100%;}
 <br/>
 <br/>
 
-<div id="anno_render"></div>
+<div id='anno_player_container'>
+	<div id="anno_render"></div>
+
+	<div id="ytplayer"></div>
+</div>
+
+<!-- TODO -->
+<!--
+
+<script>
+  // Load the IFrame Player API code asynchronously.
+  var tag = document.createElement('script');
+  tag.src = "https://www.youtube.com/player_api";
+  var firstScriptTag = document.getElementsByTagName('script')[0];
+  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+  // Replace the 'ytplayer' element with an <iframe> and
+  // YouTube player after the API code downloads.
+  var player;
+  function onYouTubePlayerAPIReady() {
+    player = new YT.Player('ytplayer', {
+      height: '360',
+      width: '640',
+      videoId: '6pv2qxbiabc',
+	  enablejsapi: '1'
+    });
+  }
+</script>
+
+-->
 
 </body>
 
