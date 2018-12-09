@@ -23,16 +23,6 @@ function GetAllXMLChildrenWithName(node, name) {
 	return children;
 }
 
-/*
-			
-	
-
-*/
-
-/*
-
-*/
-
 function IsRectSegment(segElem) {
     var rectRegion = GetXMLChildWithName(GetXMLChildWithName(segElem, 'movingRegion', 0), 'rectRegion', 0);
     return rectRegion !== null;
@@ -43,7 +33,7 @@ function IsAnchoredSegment(segElem) {
     return anchoredRegion !== null;
 }
 
-// t="0:00:00.0"
+// timeCode is of the format "0:00:00.0", or "00:00.0" or "00.0"
 function ParseTimeCode(timeCode) {
     var parts = timeCode.split(':');
     if (parts.length === 3){

@@ -62,6 +62,7 @@ html,body{height:100%;}
 
 <p id='vid_time_label'>0 seconds</p>
 
+<!-- NOTE: This is just for local development on chrome...ideally will be done using XHR on a server later-->
 <input id='myFile' type='file' oninput='onFileInput()'/>
 
 <br/>
@@ -75,8 +76,8 @@ html,body{height:100%;}
 </div>
 
 <!-- TODO -->
-<!--
 
+<!--
 <script>
   // Load the IFrame Player API code asynchronously.
   var tag = document.createElement('script');
@@ -91,12 +92,15 @@ html,body{height:100%;}
     player = new YT.Player('ytplayer', {
       height: '360',
       width: '640',
-      videoId: '6pv2qxbiabc',
-	  enablejsapi: '1'
+      videoId: 'NsPoyMzsVOU',
+	  enablejsapi: '1',
+	  
+	  // TODO: Figure out which of these options are useful
+	  controls: '0',
+	  modestbranding:'1'
     });
   }
 </script>
-
 -->
 
 </body>

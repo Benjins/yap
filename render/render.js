@@ -23,6 +23,7 @@ function GetBackgroundColourForAnnotation(anno) {
 	return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';	
 }
 
+// TODO: Better home for this...
 var annoIDToHTMLMap = {};
 
 function BlockOutAnnotations(annoData) {
@@ -131,6 +132,8 @@ function BlockOutAnnotations(annoData) {
 	}
 }
 
+// Turn on and off annotations based on what the current time is
+// TODO: Get time from YT video instead
 function RenderAnnotations(annoData) {
 	var anno_render = document.getElementById('anno_render');
 	
@@ -154,12 +157,7 @@ function RenderAnnotations(annoData) {
 	}
 }
 
-
-
-window.onload = function() {
-	
-}
-
+// Used for local development, but similar loading function for XHR will come later
 function onFileInput() {
 	var x = document.getElementById("myFile");
     if (x.files !== null && x.files !== undefined) {
