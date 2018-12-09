@@ -87,10 +87,10 @@ def ParseVideoIDFromURL(url):
 
     return None
 
-## Temporary stack for video traversal
-## NOTE: Depth-first as a result (could be breadth-first, but I don't know Python :/)
-## NOTE: Only temporary, not saved out so some data may be lost
-videoStack = [ParseVideoIDFromURL(f) for f in sys.argv[1:]]
+## Temporary queue for video traversal
+## NOTE: breadth-first as a result
+## NOTE: Only temporary, not saved out so some data may be lost in case of crash/early exit
+videoQueue = [ParseVideoIDFromURL(f) for f in sys.argv[1:]]
 
 ## Even if we've already downloaded something, parse it again to 
 forceParse = False
@@ -120,7 +120,7 @@ def ParseVideo(id):
                     urlStr = urlElem.get('value')
                     if urlStr is not None and urlStr.startswith("https://www.youtube.com/watch?"):
                         print("Found new URL to crawl: '%s'" % urlStr)
-                        videoStack.append(ParseVideoIDFromURL(urlStr))
+                        videoQueue.append(ParseVideoIDFromURL(urlStr))
 
         if not forceParse:
             ## XXX: If the command terminates early, we may lose some data that way
@@ -152,10 +152,10 @@ def DownloadAndParseVideo(id):
 
     ParseVideo(id)
 
-while len(videoStack) > 0:
-    print("Still have %d videos in queue (may have dupes)" % len(videoStack))
+while len(videoQueue) > 0:
+    print("Still have %d videos in queue (may have dupes)" % len(videoQueue))
 	## BFS For now...DFS wasn't as good
-    nextVid = videoStack.pop(0)
+    nextVid = videoQueue.pop(0)
     if nextVid is None:
         print("Ooops....")
     else:
