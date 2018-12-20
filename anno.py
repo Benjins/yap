@@ -7,17 +7,14 @@
 ## This will crawl any videos linked in the annotations as well, so it may take a while...
 ## Stopping the command in the middle of running is okay, anything downloaded will stay,
 ## but may lose some data that wasn't crawled yet
-## Expects YOUTUBE_DL_CMD to be the youtube-dl executable that can be run
-## Tested on youtube-dl version 2018.11.23
 ## Uses Sqlite, puts a lil 'anno.db' file in the current directory, that's just to track what's been cached
-
-## NOTE: May need to change this to point to the youtube-dl executable
-YOUTUBE_DL_CMD = 'youtube-dl'
 
 ## Dependencies
 import xml.etree.ElementTree
 import sqlite3
 import sys
+
+import http.client
 
 from os import listdir
 from os.path import isfile, join
@@ -56,8 +53,8 @@ db.commit()
 
 def DidAnnotationsAndMetadataGetDownloaded(id):
     annoFile = Path("./%s.annotations.xml" % id)
-    metaFile = Path("./%s.info.json" % id)
-    return annoFile.is_file() and metaFile.is_file()
+    ## NOTE: No longer downloading meta files for now
+    return annoFile.is_file()
 
 def IsVideoDownloaded(id):
     return db.execute("SELECT * FROM VideoAnnoDL WHERE videoID='%s'" % id).fetchone() is not None
@@ -93,7 +90,12 @@ def ParseVideoIDFromURL(url):
 ## NOTE: Only temporary, not saved out so some data may be lost in case of crash/early exit
 videoQueue = [ParseVideoIDFromURL(f) for f in sys.argv[1:]]
 
-## Even if we've already downloaded something, parse it again to 
+## If we are forcing parsing, we make sure we don't parse the same file twice in this session,
+## So an in-memory dict of the ones we've already hit is used
+## Otherwise, we'd infinite loop potentially
+forceParseDictCheck = {}
+
+## Even if we've already downloaded something, parse it again to
 forceParse = False
 
 ## Only download annotations for videos in the argv list, don't crawl to others
@@ -105,7 +107,9 @@ disableCrawl = False
 def ParseVideo(id):
     if disableCrawl:
         return
-    elif not forceParse and IsVideoParsed(id):
+    elif (forceParse and id in forceParseDictCheck) or (not forceParse and IsVideoParsed(id)):
+        ## If we are forcing parsing, check that we didn't already parse this video in this session
+        ## If we are not forcing parsing, check the persistent set of parsed videos in the database
         print("Skipping Video Parsing")
     elif not IsVideoDownloaded(id):
         print("'%s' Not yet downloaded, cannot parse" % id)
@@ -123,27 +127,63 @@ def ParseVideo(id):
                         print("Found new URL to crawl: '%s'" % urlStr)
                         videoQueue.append(ParseVideoIDFromURL(urlStr))
 
-        if not forceParse:
-            ## XXX: If the command terminates early, we may lose some data that way
-            db.execute("INSERT INTO VideoAnnoParsed(videoID) VALUES('%s');" % id)
-            db.commit()
+        ## If we are forcing parsing (i.e, checking against the newly constructed in-memory set of already parsed videos),
+        ## Then the in-memory set is the one we update
+        ## In both cases, we update the persistent set of parsed videos
+        if forceParse:
+            forceParseDictCheck[id] = 0
+
+        ## XXX: If the command terminates early, we may lose some data that way
+        db.execute("INSERT OR IGNORE INTO VideoAnnoParsed(videoID) VALUES('%s');" % id)
+        db.commit()
+
+## The connection to YouTube...kinda important for this
+YTconn = http.client.HTTPSConnection("www.youtube.com")
 
 def DownloadVideo(id):
+    global YTconn
     if IsVideoDownloaded(id):
         print("Skipping Video Download")
     else:
-        ## These are the args you want: Annotations and metadata, but not the actual video
-        ## Saved out with a filename based on the video_id, so it'll always be unique for different videos
-        ## And won't have filesystem unicode isssues (:fingers_crossed:)
-        call([YOUTUBE_DL_CMD, "--verbose", "--write-annotations", "--skip-download", "--id", "--write-info-json", "https://youtube.com/watch?v=%s" % id])
+        annoURL = '/annotations_invideo?video_id=%s' % id
+        res = None
+        retry = True
+        ## If we get a ResponseNotReady error, it means our keepalive ran out
+        ## In that case, we re-establish our connection and try again
+        ## If we get a different error, it probably failed for real, so we just give up
+        while retry:
+            try:
+                ## TODO: Any headers that need to be set would go here
+                YTconn.request("GET", annoURL)
+                res = YTconn.getresponse()
+                retry = False
+            except http.client.ResponseNotReady:
+                print("Re-establishing connection...")
+                YTconn = http.client.HTTPSConnection("www.youtube.com")
+            except Exception as e:
+                print("Encountered other error...")
+                ## For debugging, this is useful
+                ## Otherwise, immortality has its perks
+                ##raise e 
+                retry = False
 
-        ## TODO: Error checking?
+        if res is not None and res.status == 200:
+            data = res.read()
 
-        if DidAnnotationsAndMetadataGetDownloaded(id):
-            db.execute("INSERT INTO VideoAnnoDL(videoID) VALUES('%s');" % id)
-            db.commit()
+            with open('%s.annotations.xml' % id, 'w', encoding="utf-8") as f:
+                f.write(data.decode("utf-8"))
+                f.close()
+
+            if DidAnnotationsAndMetadataGetDownloaded(id):
+                db.execute("INSERT INTO VideoAnnoDL(videoID) VALUES('%s');" % id)
+                db.commit()
+            else:
+                print("Could not download video '%s'..." % id)
         else:
-            print("Could not download video '%s'..." % id)
+            if res is None:
+                print("Some error during downloading...")
+            else:
+                print("Got error %d %s on '%s', failed to download" % (res.status, res.reason, id))
 
 def DownloadAndParseVideo(id):
     if IsVideoDownloaded(id):
