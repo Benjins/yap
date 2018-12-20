@@ -67,6 +67,7 @@ def IsVideoParsed(id):
 
 ## TODO: Actual parsing, for now just manually get video id
 def ParseVideoIDFromURL(url):
+    url = url.strip()
     if (url is not None and url.startswith("https://www.youtube.com/watch?")):
         ## Isolate the Query params
         ## NOTE: This is not exactly correct, but seems to work most of the time
