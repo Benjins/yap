@@ -13,8 +13,11 @@
 import xml.etree.ElementTree
 import sqlite3
 import sys
+import os
+import errno
 
 import http.client
+
 
 from os import listdir
 from os.path import isfile, join
@@ -37,22 +40,23 @@ CREATE TABLE If NOT EXISTS VideoAnnoParsed(
 """
 
 ## Setup db connection and the schemas
-db = sqlite3.connect('anno.db')
+db = sqlite3.connect('anno.db', timeout=30.0)
 db.execute(createStr)
 db.execute(createStr2)
-
-## Add any new files we may have missed
-## NOTE: Won't need to do this normally, and is just to avoid extra downloads if we already have any
-##annoFiles = [f[:-16] for f in listdir("./") if isfile(join("./", f)) and f.endswith(".annotations.xml")]
-##for f in annoFiles:
-##    db.execute("INSERT INTO VideoAnnoDL(videoID) SELECT '%s' WHERE NOT EXISTS(SELECT * FROM VideoAnnoDL WHERE videoID='%s');" % (f, f))
 
 db.commit()
 
 ############################
 
+## Case-insensitive so that it works on any file system w/o weird quirks
+def GetSubFolderNameForVideoID(id):
+    return id[0:2].upper()
+
+def GetFullPathForVideoID(id):
+    return '%s/%s.annotations.xml' % (GetSubFolderNameForVideoID(id), id)
+
 def DidAnnotationsAndMetadataGetDownloaded(id):
-    annoFile = Path("./%s.annotations.xml" % id)
+    annoFile = Path(GetFullPathForVideoID(id))
     ## NOTE: No longer downloading meta files for now
     return annoFile.is_file()
 
@@ -116,7 +120,7 @@ def ParseVideo(id):
     elif not DidAnnotationsAndMetadataGetDownloaded(id):
         print("Error, we think '%s' was downloaded but the files are missing" % id)
     else:
-        root = xml.etree.ElementTree.parse('%s.annotations.xml' % id).getroot()
+        root = xml.etree.ElementTree.parse(GetFullPathForVideoID(id)).getroot()
         for annotation in root.iter('annotation'):
             action = annotation.find('action')
             if action is not None:
@@ -137,6 +141,13 @@ def ParseVideo(id):
         db.execute("INSERT OR IGNORE INTO VideoAnnoParsed(videoID) VALUES('%s');" % id)
         db.commit()
 
+def MaybeMakeDirectory(dirname):
+    try:
+        os.makedirs(dirname)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+        
 ## The connection to YouTube...kinda important for this
 YTconn = http.client.HTTPSConnection("www.youtube.com")
 
@@ -170,12 +181,16 @@ def DownloadVideo(id):
         if res is not None and res.status == 200:
             data = res.read()
 
-            with open('%s.annotations.xml' % id, 'w', encoding="utf-8") as f:
+            folder = GetSubFolderNameForVideoID(id)
+            MaybeMakeDirectory(folder)
+            
+            filename = GetFullPathForVideoID(id)
+            with open(filename, 'w', encoding="utf-8") as f:
                 f.write(data.decode("utf-8"))
                 f.close()
 
             if DidAnnotationsAndMetadataGetDownloaded(id):
-                db.execute("INSERT INTO VideoAnnoDL(videoID) VALUES('%s');" % id)
+                db.execute("INSERT OR IGNORE INTO VideoAnnoDL(videoID) VALUES('%s');" % id)
                 db.commit()
             else:
                 print("Could not download video '%s'..." % id)
