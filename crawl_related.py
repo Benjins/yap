@@ -61,4 +61,6 @@ def CrawlVideoIDForRelatedVideos(id):
 videoQueue = [ParseVideoIDFromURL(f) for f in sys.argv[1:]]
 
 for vid in videoQueue:
+    ## this isn't strictly necessary, but it is nice so we don't have to separately join the inputs and outputs
+    print(vid)
     CrawlVideoIDForRelatedVideos(vid)
