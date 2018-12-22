@@ -48,7 +48,7 @@ CREATE INDEX If NOT EXISTS ParsedIdIndex ON VideoAnnoParsed (videoID);
 """
 
 ## Setup db connection and the schemas
-db = sqlite3.connect('anno.db', timeout=30.0)
+db = sqlite3.connect('anno.db', timeout=60.0)
 db.execute(createStr)
 db.execute(createStr2)
 db.execute(indexStr)
@@ -70,11 +70,37 @@ def DidAnnotationsAndMetadataGetDownloaded(id):
     ## NOTE: No longer downloading meta files for now
     return annoFile.is_file()
 
+## In-memory cache, yes it's volatile but it's only for marking things as downloaded,
+## worst case is we'd download it again unnecessarily
+outstandingDLWrites = {}
+def MarkVidAsDownloaded(id):
+    global outstandingDLWrites
+    outstandingDLWrites[id] = 1
+    
+    if len(outstandingDLWrites) > 200:
+        print("Syncing downloaded videos to database")
+        for vidID in outstandingDLWrites:
+            db.execute("INSERT OR IGNORE INTO VideoAnnoDL(videoID) VALUES('%s');" % vidID)
+        db.commit()
+        outstandingDLWrites = {}
+    
 def IsVideoDownloaded(id):
-    return db.execute("SELECT * FROM VideoAnnoDL WHERE videoID='%s'" % id).fetchone() is not None
+    return (id in outstandingDLWrites) or (db.execute("SELECT * FROM VideoAnnoDL WHERE videoID='%s'" % id).fetchone() is not None)
 
+outstandingParsedWrites = []
+def MarkVidAsParsed(id):
+    global outstandingParsedWrites
+    outstandingParsedWrites.append(id)
+    
+    if len(outstandingParsedWrites) > 200:
+        print("Syncing parsed videos to database")
+        for vidID in outstandingParsedWrites:
+            db.execute("INSERT OR IGNORE INTO VideoAnnoParsed(videoID) VALUES('%s');" % vidID)
+        db.commit()
+        outstandingParsedWrites = []
+    
 def IsVideoParsed(id):
-    return db.execute("SELECT * FROM VideoAnnoParsed WHERE videoID='%s'" % id).fetchone() is not None
+    return (id in outstandingParsedWrites) or (db.execute("SELECT * FROM VideoAnnoParsed WHERE videoID='%s'" % id).fetchone() is not None)
 
 ## TODO: Actual parsing, for now just manually get video id
 def ParseVideoIDFromURL(url):
@@ -147,9 +173,7 @@ def ParseVideo(id):
         if forceParse:
             forceParseDictCheck[id] = 0
 
-        ## XXX: If the command terminates early, we may lose some data that way
-        db.execute("INSERT OR IGNORE INTO VideoAnnoParsed(videoID) VALUES('%s');" % id)
-        db.commit()
+        MarkVidAsParsed(id)
 
 def MaybeMakeDirectory(dirname):
     try:
@@ -200,8 +224,7 @@ def DownloadVideo(id):
                 f.close()
 
             if DidAnnotationsAndMetadataGetDownloaded(id):
-                db.execute("INSERT OR IGNORE INTO VideoAnnoDL(videoID) VALUES('%s');" % id)
-                db.commit()
+                MarkVidAsDownloaded(id)
             else:
                 print("Could not download video '%s'..." % id)
         else:
@@ -211,13 +234,9 @@ def DownloadVideo(id):
                 print("Got error %d %s on '%s', failed to download" % (res.status, res.reason, id))
 
 def DownloadAndParseVideo(id):
-    if IsVideoDownloaded(id):
-        print("Skipping video '%s', already downloaded" % id)
-    else:
-        DownloadVideo(id)
-
+    DownloadVideo(id)
     ParseVideo(id)
-
+    
 while len(videoQueue) > 0:
     print("Still have %d videos in queue (may have dupes)" % len(videoQueue))
 	## BFS For now...DFS wasn't as good
@@ -228,4 +247,13 @@ while len(videoQueue) > 0:
         print("Downloading and parsing next vid: '%s'..." % nextVid)
         DownloadAndParseVideo(nextVid)
 
+## Any outstanding writes to our "memory cache" need to be flushed to disk now
+for vidID in outstandingDLWrites:
+    db.execute("INSERT OR IGNORE INTO VideoAnnoDL(videoID) VALUES('%s');" % vidID)
+       
+for vidID in outstandingParsedWrites:
+    db.execute("INSERT OR IGNORE INTO VideoAnnoParsed(videoID) VALUES('%s');" % vidID)
+
+db.commit() 
+        
 print("All done.")
