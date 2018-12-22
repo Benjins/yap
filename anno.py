@@ -39,10 +39,20 @@ CREATE TABLE If NOT EXISTS VideoAnnoParsed(
 );
 """
 
+indexStr = """
+CREATE INDEX If NOT EXISTS DLIdIndex ON VideoAnnoDL (videoID);
+"""
+
+indexStr2 = """
+CREATE INDEX If NOT EXISTS ParsedIdIndex ON VideoAnnoParsed (videoID);
+"""
+
 ## Setup db connection and the schemas
 db = sqlite3.connect('anno.db', timeout=30.0)
 db.execute(createStr)
 db.execute(createStr2)
+db.execute(indexStr)
+db.execute(indexStr2)
 
 db.commit()
 
