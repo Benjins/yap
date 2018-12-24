@@ -4,6 +4,8 @@ import os
 
 import http.client
 
+from urllib.parse import urlencode
+
 ##
 ## Usage: crawl_search.py terms to search for
 ## Please use only words, there's no url escaping yet... >.<
@@ -43,7 +45,7 @@ UserAgent = "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/5
 
 ## Returns (continID, clickTracker) if found, or (None, None) otherwise
 def CrawlVideosForSearchInitial(searchQuery):
-    url = "https://www.youtube.com/results?search_query=%s" % searchQuery
+    url = '/results?' + urlencode({'search_query': searchQuery})
     
     
     ##-H "pragma: no-cache"
@@ -78,12 +80,11 @@ def CrawlVideosForSearchInitial(searchQuery):
 
 ## Returns (continID, clickTracker) if found, or (None, None) otherwise
 def CrawlVideosForSearchContinue(searchQuery, continID, clickTracker):
-    url = "https://www.youtube.com/results?search_query=%s&pbj=1&ctoken=%s&continuation=%s&itct=%s" % (searchQuery, continID, continID, clickTracker)
+    url = '/results?' + urlencode({'search_query': searchQuery, 'pbj': 1, 'ctoken': continID, 'continuation': continID, 'itct': clickTracker})
     
     ##-H "origin: https://www.youtube.com"
     ##-H "x-youtube-page-label: youtube.ytfe.desktop_20181219_4_RC2"
     ##-H "x-youtube-page-cl: 226370883"
-    ##-H "x-spf-referer: https://www.youtube.com/results?search_query=amv+annotations"
     ##-H "pragma: no-cache"
     ##-H "x-youtube-client-version: 2.20181220"
     ##-H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36"
@@ -96,7 +97,6 @@ def CrawlVideosForSearchContinue(searchQuery, continID, clickTracker):
     headerData['origin'] = "https://www.youtube.com"
     headerData['x-youtube-page-label'] = "youtube.ytfe.desktop_20181219_4_RC2"
     headerData['x-youtube-page-cl'] = "226370883"
-    headerData['x-spf-referer'] = "https://www.youtube.com/results?search_query=%s" % searchQuery
     headerData['x-youtube-client-version'] = "2.20181220"
     headerData['x-youtube-variants-checksum'] = "3681b770b3fa1e524669701ba8924e26"
     headerData['x-youtube-client-name'] = "1"
@@ -128,7 +128,7 @@ def CrawlVideosForSearchContinue(searchQuery, continID, clickTracker):
 ## search string is the human entered string which has been split into terms, e.g. ["day", "at", "the", "zoo"]
 ## NOTE: Cannot handle url-escaping just yet, so nothing like quotes, apostrophes, ampersands, etc, just words for now
 def CrawlVideosForSearch(searchTerms):
-    seperator = '+'
+    seperator = ' '
     searchQuery = seperator.join(searchTerms)
     #print("searching for videos: '%s'" % searchQuery)
     
