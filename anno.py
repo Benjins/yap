@@ -73,32 +73,46 @@ def DidAnnotationsAndMetadataGetDownloaded(id):
 ## In-memory cache, yes it's volatile but it's only for marking things as downloaded,
 ## worst case is we'd download it again unnecessarily
 outstandingDLWrites = {}
+outstandingParsedWrites = {}
+
+def FlushOutstandingWrites():
+    global outstandingParsedWrites
+    global outstandingDLWrites
+    
+    # Wrangle the dict into a list of tuples, which executemany takes
+    dlWritesEx = []
+    for dlWrite in outstandingDLWrites.keys():
+        dlWritesEx.append((dlWrite, ))
+        
+    parseWritesEx = []
+    for parseWrite in outstandingParsedWrites.keys():
+        parseWritesEx.append((parseWrite, ))
+
+    print("Syncing outstanding writes to database")
+    db.executemany("INSERT OR IGNORE INTO VideoAnnoDL(videoID) VALUES (?)", dlWritesEx)
+    db.executemany("INSERT OR IGNORE INTO VideoAnnoParsed(videoID) VALUES (?)", parseWritesEx)
+    db.commit()
+    outstandingDLWrites = {}
+    outstandingParsedWrites = {}
+
 def MarkVidAsDownloaded(id):
     global outstandingDLWrites
     outstandingDLWrites[id] = 1
     
     if len(outstandingDLWrites) > 200:
-        print("Syncing downloaded videos to database")
-        for vidID in outstandingDLWrites:
-            db.execute("INSERT OR IGNORE INTO VideoAnnoDL(videoID) VALUES('%s');" % vidID)
-        db.commit()
-        outstandingDLWrites = {}
-    
-def IsVideoDownloaded(id):
-    return (id in outstandingDLWrites) or (db.execute("SELECT * FROM VideoAnnoDL WHERE videoID='%s'" % id).fetchone() is not None)
+        FlushOutstandingWrites()
 
-outstandingParsedWrites = []
+
 def MarkVidAsParsed(id):
     global outstandingParsedWrites
-    outstandingParsedWrites.append(id)
+    outstandingParsedWrites[id] = 1
     
     if len(outstandingParsedWrites) > 200:
-        print("Syncing parsed videos to database")
-        for vidID in outstandingParsedWrites:
-            db.execute("INSERT OR IGNORE INTO VideoAnnoParsed(videoID) VALUES('%s');" % vidID)
-        db.commit()
-        outstandingParsedWrites = []
-    
+        FlushOutstandingWrites()
+
+def IsVideoDownloaded(id):
+    return (id in outstandingDLWrites) or (db.execute("SELECT * FROM VideoAnnoDL WHERE videoID='%s'" % id).fetchone() is not None)
+        
 def IsVideoParsed(id):
     return (id in outstandingParsedWrites) or (db.execute("SELECT * FROM VideoAnnoParsed WHERE videoID='%s'" % id).fetchone() is not None)
 
@@ -248,12 +262,6 @@ while len(videoQueue) > 0:
         DownloadAndParseVideo(nextVid)
 
 ## Any outstanding writes to our "memory cache" need to be flushed to disk now
-for vidID in outstandingDLWrites:
-    db.execute("INSERT OR IGNORE INTO VideoAnnoDL(videoID) VALUES('%s');" % vidID)
-       
-for vidID in outstandingParsedWrites:
-    db.execute("INSERT OR IGNORE INTO VideoAnnoParsed(videoID) VALUES('%s');" % vidID)
-
-db.commit() 
+FlushOutstandingWrites()
         
 print("All done.")
