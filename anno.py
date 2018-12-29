@@ -18,6 +18,8 @@ import errno
 
 import http.client
 
+import time
+
 
 from os import listdir
 from os.path import isfile, join
@@ -54,6 +56,8 @@ db.execute(createStr2)
 db.execute(indexStr)
 db.execute(indexStr2)
 
+db.execute("pragma journal_mode=wal")
+
 db.commit()
 
 ############################
@@ -88,10 +92,28 @@ def FlushOutstandingWrites():
     for parseWrite in outstandingParsedWrites.keys():
         parseWritesEx.append((parseWrite, ))
 
-    print("Syncing outstanding writes to database")
-    db.executemany("INSERT OR IGNORE INTO VideoAnnoDL(videoID) VALUES (?)", dlWritesEx)
-    db.executemany("INSERT OR IGNORE INTO VideoAnnoParsed(videoID) VALUES (?)", parseWritesEx)
+    #print("Syncing outstanding writes to database")
+    
+    print("Syncing %d dl writes and %d parse writes" % (len(dlWritesEx), len(parseWritesEx)))
+    
+    cur = db.cursor()
+    
+    t0 = time.time()
+    cur.execute("BEGIN TRANSACTION;")
+    cur.executemany("INSERT OR IGNORE INTO VideoAnnoDL(videoID) VALUES (?);", dlWritesEx)
+    cur.executemany("INSERT OR IGNORE INTO VideoAnnoParsed(videoID) VALUES (?);", parseWritesEx)
+    t1 = time.time()
+    cur.execute("COMMIT;")
+    t2 = time.time()
+    
     db.commit()
+    
+    t3 = time.time()
+    
+    print("transactional inserts: %f" % (t1 - t0))
+    print("transactional commit: %f" % (t2 - t1))
+    print("disk commit: %f" % (t3 - t2))
+    
     outstandingDLWrites = {}
     outstandingParsedWrites = {}
 
@@ -99,7 +121,7 @@ def MarkVidAsDownloaded(id):
     global outstandingDLWrites
     outstandingDLWrites[id] = 1
     
-    if len(outstandingDLWrites) > 200:
+    if len(outstandingDLWrites) > 500:
         FlushOutstandingWrites()
 
 
@@ -107,7 +129,7 @@ def MarkVidAsParsed(id):
     global outstandingParsedWrites
     outstandingParsedWrites[id] = 1
     
-    if len(outstandingParsedWrites) > 200:
+    if len(outstandingParsedWrites) > 500:
         FlushOutstandingWrites()
 
 def IsVideoDownloaded(id):
@@ -250,6 +272,21 @@ def DownloadVideo(id):
 def DownloadAndParseVideo(id):
     DownloadVideo(id)
     ParseVideo(id)
+
+##unparsedListCur = db.execute("SELECT * FROM VideoAnnoDL WHERE NOT EXISTS (SELECT * FROM VideoAnnoParsed WHERE VideoAnnoParsed.videoID = VideoAnnoDL.videoID) LIMIT 5000")
+##
+##for i in range(5000):
+##    vidID = unparsedListCur.fetchone()[0]
+##    if vidID is not None:
+##        ParseVideo(vidID)
+##    else:
+##        break
+    
+##with open('UserCrawl/youtube_vid_id_list.txt') as vidIdList:
+##    for vidID in vidIdList:
+##        vidID = vidID.strip()
+##        print('Working on %s' % vidID)
+##        DownloadVideo(vidID)
     
 while len(videoQueue) > 0:
     print("Still have %d videos in queue (may have dupes)" % len(videoQueue))
