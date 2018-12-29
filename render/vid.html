@@ -55,12 +55,15 @@ html,body{height:100%;}
 
 <body>
 
+<input id='disable_anno_button' type="checkbox" name="vehicle1" value="Bike" checked onclick="OnAnnotationEnableBox()">Enable Annotations<br/>
+<!--
 <button id='restart_button' onclick='RenderAnnotations()'>GO TO START</button>
 <button id='pause_play_button'>Pause</button>
+-->
 
-<input id='vid_time' type="range" step='0.1' min="0" max="150" value="0"/>
+<!--<input id='vid_time' type="range" step='0.1' min="0" max="150" value="0"/>-->
 
-<p id='vid_time_label'>0 seconds</p>
+<!--<p id='vid_time_label'>0 seconds</p>-->
 
 <!-- NOTE: This is just for local development on chrome...ideally will be done using XHR on a server later-->
 <!--<input id='myFile' type='file' oninput='onFileInput()'/>-->
@@ -77,31 +80,56 @@ html,body{height:100%;}
 
 <!-- TODO -->
 
-<!--
 <script>
+  function PlayYTVideoDirect(vidID) {
+	window.bnsYTPlayer = new YT.Player('ytplayer', {
+      height: '360',
+      width: '640',
+      videoId: vidID,
+	  enablejsapi: '1',
+	  origin: 'localhost:5005',
+	  ivLoadPolicy: '3',
+	  
+	  // TODO: Figure out which of these options are useful
+	  controls: '0',
+	  modestbranding:'1'
+    });
+	console.log(window.bnsYTPlayer);
+  }
+
+  var vidIDQueued = null;
+  var YTAPIReady = false;
+  function onYouTubePlayerAPIReady() {
+    if (!YTAPIReady) {
+	
+	  if (vidIDQueued !== null) {
+		PlayYTVideoDirect(vidIDQueued);
+	  }
+	
+	  YTAPIReady = true;
+	}
+  }
+  
+  function PlayYTVideo(vidID) {
+	if (YTAPIReady) {
+	  if (window.bnsYTPlayer !== undefined) {
+	    window.bnsYTPlayer.loadVideoById(vidID);
+	  } else {
+		PlayYTVideoDirect(vidID);
+	  }
+	} else {
+	  vidIDQueued = vidID;
+	}
+  }
+  
   // Load the IFrame Player API code asynchronously.
   var tag = document.createElement('script');
   tag.src = "https://www.youtube.com/player_api";
   var firstScriptTag = document.getElementsByTagName('script')[0];
   firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-  // Replace the 'ytplayer' element with an <iframe> and
-  // YouTube player after the API code downloads.
-  var player;
-  function onYouTubePlayerAPIReady() {
-    player = new YT.Player('ytplayer', {
-      height: '360',
-      width: '640',
-      videoId: 'NsPoyMzsVOU',
-	  enablejsapi: '1',
-	  
-	  // TODO: Figure out which of these options are useful
-	  controls: '0',
-	  modestbranding:'1'
-    });
-  }
+  
 </script>
--->
 
 </body>
 

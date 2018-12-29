@@ -236,23 +236,34 @@ function BlockOutAnnotations(annoData) {
 
 // Turn on and off annotations based on what the current time is
 // TODO: Get time from YT video instead
-function RenderAnnotations(annoData) {
-	var anno_render = document.getElementById('anno_render');
-	
-	var videoWidth = anno_render.clientWidth;
-	var videoHeight = anno_render.clientHeight;
-	
-	for (var idx in annoData.annotations) {
-		var anno = annoData.annotations[idx];
-
-		if (anno.seg !== undefined) {
-			annotationElem = annoIDToHTMLMap[anno.id];
+function RenderAnnotations(annoData, currentTime) {
+	if (window.bnsPrevRenderedTime === undefined || window.bnsPrevRenderedTime !== currentTime) {	
+		console.log("window.bnsDisableAllAnnotations: " + window.bnsDisableAllAnnotations);
+		window.bnsPrevRenderedTime = currentTime;
+		var anno_render = document.getElementById('anno_render');
+		
+		var videoWidth = anno_render.clientWidth;
+		var videoHeight = anno_render.clientHeight;
+		
+		for (var idx in annoData.annotations) {
+			var anno = annoData.annotations[idx];
 			
-			if (anno.seg.timingShow) {
-				if (window.bnsCurrentVidTime >= anno.seg.startTime && window.bnsCurrentVidTime <= anno.seg.endTime) {
-					annotationElem.style.display = 'block';
-				} else {
+			
+
+			if (anno.seg !== undefined) {
+				annotationElem = annoIDToHTMLMap[anno.id];
+				
+				if (window.bnsDisableAllAnnotations) {
 					annotationElem.style.display = 'none';
+					continue;
+				}
+				
+				if (anno.seg.timingShow) {
+					if (currentTime >= anno.seg.startTime && currentTime <= anno.seg.endTime) {
+						annotationElem.style.display = 'block';
+					} else {
+						annotationElem.style.display = 'none';
+					}
 				}
 			}
 		}
@@ -308,22 +319,32 @@ function LoadUpVideo(videoID) {
 				var vidTime = document.getElementById('vid_time');
 				var vidTimeLabel = document.getElementById('vid_time_label');
 				
-				window.bnsCurrentVidTime = vidTime.value;
-				
 				BlockOutAnnotations(annoData);
 				
-				vidTime.oninput = function() {
-					window.bnsCurrentVidTime = vidTime.value;
-					vidTimeLabel.innerHTML = vidTime.value + ' seconds';
-					RenderAnnotations(annoData);
-				};
+				setInterval(function() {					
+					var currentTime = 0;
+					if (window.bnsYTPlayer !== null && window.bnsYTPlayer !== undefined && window.bnsYTPlayer.getCurrentTime !== undefined) {
+						currentTime = window.bnsYTPlayer.getCurrentTime();
+					}
+
+					RenderAnnotations(annoData, currentTime);
+				}, 100);
 			});
 	  }
 	};
 	xhr.send();
 	
 	// TODO: Also set Youtube Embed URL
+	PlayYTVideo(videoID);
 }
 
-LoadUpVideo('l2mcdS6ioo8')
+
+
+window.onload = function() {
+	LoadUpVideo('l2mcdS6ioo8')
+};
+
+function OnAnnotationEnableBox() {
+	window.bnsDisableAllAnnotations = (document.getElementById('disable_anno_button').checked != true);
+}
 

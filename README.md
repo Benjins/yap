@@ -26,14 +26,16 @@ Some examples of videos that use annotations in various ways:
  
 TODO for rendering layer:
 
- - have youtube embed aligned to annotations
- - general outgoing links
- - YouTube links stay on page, but change video/annotations
- - YouTube links for the current video just jump the timestamp 
- - font size issues
- - highlight annotation borders
- - text colour
- - pause type annotations
- - speech bubbles w/ proper anchors
- - make title/label stuff are rendering properly
+ - [?] have youtube embed aligned to annotations
+ - [ ] aspect ratio correction for annotations over embed
+ - [ ] Figure out some way to embed video w/o annotations by default (or just wait until Jan. 15, 2019 lol)
+ - [ ] general outgoing links
+ - [X] YouTube links stay on page, but change video/annotations
+ - [ ] YouTube links for the current video just jump the timestamp
+ - [ ] font size issues
+ - [?] highlight annotation borders
+ - [ ] text colour
+ - [ ] pause type annotations
+ - [ ] speech bubbles w/ proper anchors
+ - [ ] make title/label stuff are rendering properly
  
