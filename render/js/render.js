@@ -259,7 +259,7 @@ function RenderAnnotations(annoData, currentTime) {
 				}
 				
 				if (anno.seg.timingShow) {
-					if (currentTime >= anno.seg.startTime && currentTime <= anno.seg.endTime) {
+					if (currentTime > anno.seg.startTime && currentTime <= anno.seg.endTime) {
 						annotationElem.style.display = 'block';
 					} else {
 						annotationElem.style.display = 'none';
@@ -307,9 +307,7 @@ function RenderAnnotations(annoData, currentTime) {
 
 function LoadUpVideo(videoID) {
 	
-	var xhr = new XMLHttpRequest(),
-		method = "GET",
-		url = "https://developer.mozilla.org/";
+	var xhr = new XMLHttpRequest();
 
 	xhr.open("GET", "/anno/" + videoID);
 	xhr.onreadystatechange = function () {

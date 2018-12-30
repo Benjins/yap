@@ -1,0 +1,31 @@
+* {
+	box-sizing: border-box;
+}
+
+#anno_render {
+	width: 640px;
+	height: 360px;
+	background: rgba(200, 200, 200, 0.3);
+	
+	position: relative;
+}
+
+#anno_render * {
+	z-index: 100;
+}
+
+#anno_render .text_annotation {
+	padding: 5px;
+	position: absolute;
+}
+
+#anno_player_container {
+	position: relative;
+}
+
+#ytplayer {
+	top: 0px;
+	position: absolute;
+}
+
+html,body{height:100%;}
