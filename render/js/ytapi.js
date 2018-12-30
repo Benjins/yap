@@ -4,7 +4,7 @@
 	ytEmbed.src = newURL;
   }
 
-  function PlayYTVideoDirect(vidID) {
+  function PlayYTVideoDirect(vidID, time) {
 	window.bnsYTPlayer = new YT.Player('ytplayer', {
       height: '360',
       width: '640',
@@ -13,6 +13,8 @@
 	  origin: window.location.hostname,
 	  // TODO: ???
 	  iv_load_policy: '3',
+	  
+	  // TODO: Start seconds here too
 	  
 	  // TODO: Figure out which of these options are useful
 	  controls: '0',
@@ -34,14 +36,22 @@
 	}
   }
   
-  function PlayYTVideo(vidID) {
+  function PlayYTVideo(vidID, time) {
 	if (YTAPIReady) {
 	  if (window.bnsYTPlayer !== undefined) {
-	    window.bnsYTPlayer.loadVideoById(vidID);
-		// TODO: I guess this isn't needed?
-		//UpdateYTPlayerURL();
+		var startSeconds = (time !== null) ? time : 0;
+		
+		var currVideoURL = window.bnsYTPlayer.getVideoUrl();
+		
+		// We're seeking to a time in this video,
+		// use seek instead of reloading the whole video
+		if (currVideoURL.includes(vidID)) {
+			window.bnsYTPlayer.seekTo(startSeconds);
+		} else {
+			window.bnsYTPlayer.loadVideoById(vidID, startSeconds);
+		}
 	  } else {
-		PlayYTVideoDirect(vidID);
+		PlayYTVideoDirect(vidID, time);
 	  }
 	} else {
 	  vidIDQueued = vidID;

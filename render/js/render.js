@@ -54,7 +54,7 @@ var annoIDToHTMLMap = {};
 // So we can't set :hover css stuff in JS directly, so we instead
 // create new styles and put them in HEAD
 // MARK(cleanup): Remove these on teardown
-function AddBorderStyles(annoBorders) {
+function AddBorderStyles(annoBorders, highlightCursorStyles) {
 	var css = "";
 	for (var annoID in annoBorders) {
 		
@@ -63,8 +63,10 @@ function AddBorderStyles(annoBorders) {
 		// 'table td:hover{ background-color: #00ff00 }';
 		css += '#' + annoID + "{ border-style: solid; border-width: 1px; border-color: rgba(0,0,0,0); }" + " #" + annoID + ":hover { border-style: solid; border-width: 1px; border-color: " + col + "; cursor: pointer; }\n" 
 		//css += '#' + annoID + ":hover { border-style: solid; border-width: 1px; border-color: " + col + "; }\n" 
-		
-		
+	}
+	
+	for (var annoID in highlightCursorStyles) {
+		css += '#' + annoID + ":hover { cursor: pointer; }\n";
 	}
 
 	var style = document.createElement('style');
@@ -78,11 +80,49 @@ function AddBorderStyles(annoBorders) {
 	document.getElementsByTagName('head')[0].appendChild(style);
 }
 
-function AnnotationNavigate(linkData) {
-	console.log("AnnotationNavigate:");
+// In form XhXXmXXs, or XXmXXs or XXs
+// return number of seconds as Number
+function ParseURLTimeCode(timecode) {
+	var hours = 0;
+	var minutes = 0;
+	var seconds = 0;
+	if (timecode.includes("h")) {
+		var parts = timecode.split('h');
+		hours = parseFloat(parts[0]);
+		timecode = parts[1];
+	}
 	
+	if (timecode.includes("m")) {
+		var parts = timecode.split('m');
+		minutes = parseFloat(parts[0]);
+		timecode = parts[1];
+	}
+	
+	if (timecode.includes("s")) {
+		var parts = timecode.split('s');
+		seconds = parseFloat(parts[0]);
+	}
+	
+	return hours * 3600 + minutes * 60 + seconds;
+}
+
+function ParseTimeFromVideoURL(url) {
+	var anchorParts = url.split('#');
+	if (anchorParts.length == 2) {
+		var anchorPart = anchorParts[1];
+		if (anchorPart.startsWith('t=')) {
+			return ParseURLTimeCode(anchorPart.substring(2));
+		}
+	}
+	
+	// TODO: Query param as well
+	
+	return null;
+}
+
+function AnnotationNavigate(linkData) {
 	if (linkData.url.startsWith("https://www.youtube.com/watch?")) {
-		var query = linkData.url.split('?')[1];
+		var query = linkData.url.split('?')[1].split('#')[0];
 		var queryParts = query.split('&');
 		var queryData = {};
 		for (var idx in queryParts) {
@@ -97,12 +137,13 @@ function AnnotationNavigate(linkData) {
 		
 		var videoID = queryData['v'];
 		if (videoID !== undefined) {
-			console.log("Navigate to: " + videoID);
-			LoadUpVideo(videoID);
+			
+			var time = ParseTimeFromVideoURL(linkData.url);
+			console.log("Navigate to: " + videoID + ' time: ' + time);
+			
+			LoadUpVideo(videoID, time);
 		}
 	}
-	
-	console.log(linkData);
 }
 
 function BlockOutAnnotations(annoData) {
@@ -125,6 +166,7 @@ function BlockOutAnnotations(annoData) {
 	}
 	
 	var borderStyle = {};
+	var highlightCursorStyles = {};
 	
 	for (var idx in annoData.annotations) {
 		var anno = annoData.annotations[idx];
@@ -143,29 +185,37 @@ function BlockOutAnnotations(annoData) {
 			annotationElem.style.height = (anno.seg.rect.h / 100.0 * videoHeight) + 'px';
 
 			background = GetBackgroundColourForAnnotation(anno);
+			foreground = GetForegroundColourForAnnotation(anno);
 			if (anno.type !== 'highlight') {
 				annotationElem.style.background = background;
-				
-				if (anno.action !== undefined) {
-					// Avoid closure-by-reference on action.link +_+
-					(function() {
-						var action = anno.action;
-						if (action.type === 'link') {
-							if (action.trigger === 'click') {
-								foreground = GetForegroundColourForAnnotation(anno);
-								borderStyle[anno.id] = foreground;
-							}
-							
-							annotationElem.onclick = function() {
-								AnnotationNavigate(action.link);
-							};
-						}
-					})();
-				}
+				annotationElem.style.color = foreground;
 			} else {
 				annotationElem.style.background = 'rgba(0,0,0,0)';
 				annotationElem.style.borderWidth = anno.highlightWidth + 'px';
 				annotationElem.style.borderColor = 'rgba(255,255,255,' + anno.borderAlpha + ')';
+				annotationElem.style.borderStyle = 'solid';
+			}
+			
+			if (anno.action !== undefined) {
+				// Avoid closure-by-reference on action.link +_+
+				(function(anno) {
+					var action = anno.action;
+					if (action.type === 'link') {
+						if (action.trigger === 'click') {
+							// We already apply border styling to highlights, and it's not on hover, it's always
+							if (anno.type !== 'highlight') {
+								borderStyle[anno.id] = foreground;
+							} else {
+								highlightCursorStyles[anno.id] = 1;
+							}
+						
+							annotationElem.onclick = function() {
+								console.log('anno type: ' + anno.type);
+								AnnotationNavigate(action.link);
+							};
+						}
+					}
+				})(anno);
 			}
 			
 			var x = anno.seg.rect.x;
@@ -191,7 +241,7 @@ function BlockOutAnnotations(annoData) {
 			if (anno.text !== undefined) {
 				annotationElem.innerHTML = anno.text;
 			} else {
-				annotationElem.innerHTML = '##';
+				annotationElem.innerHTML = '';
 			}
 			
 			annotationElem.style.display = 'none';
@@ -201,7 +251,7 @@ function BlockOutAnnotations(annoData) {
 		}
 	}
 	
-	AddBorderStyles(borderStyle);
+	AddBorderStyles(borderStyle, highlightCursorStyles);
 	
 	for (var idx in annoData.annotations) {
 		// Arrrggghhhhh JavaScript why
@@ -238,18 +288,13 @@ function BlockOutAnnotations(annoData) {
 // TODO: Get time from YT video instead
 function RenderAnnotations(annoData, currentTime) {
 	if (window.bnsPrevRenderedTime === undefined || window.bnsPrevRenderedTime !== currentTime) {	
-		console.log("window.bnsDisableAllAnnotations: " + window.bnsDisableAllAnnotations);
 		window.bnsPrevRenderedTime = currentTime;
 		var anno_render = document.getElementById('anno_render');
 		
 		var videoWidth = anno_render.clientWidth;
 		var videoHeight = anno_render.clientHeight;
-		
 		for (var idx in annoData.annotations) {
 			var anno = annoData.annotations[idx];
-			
-			
-
 			if (anno.seg !== undefined) {
 				annotationElem = annoIDToHTMLMap[anno.id];
 				
@@ -258,8 +303,11 @@ function RenderAnnotations(annoData, currentTime) {
 					continue;
 				}
 				
+				console.log(anno);
 				if (anno.seg.timingShow) {
+					console.log('FFF');
 					if (currentTime > anno.seg.startTime && currentTime <= anno.seg.endTime) {
+						console.log('ABJSBHJASGHBAHGJHABGD');
 						annotationElem.style.display = 'block';
 					} else {
 						annotationElem.style.display = 'none';
@@ -270,76 +318,51 @@ function RenderAnnotations(annoData, currentTime) {
 	}
 }
 
-// Used for local development, but similar loading function for XHR will come later
-//function onFileInput() {
-//	var x = document.getElementById("myFile");
-//    if (x.files !== null && x.files !== undefined) {
-//        if (x.files.length >= 0) {
-//            for (var i = 0; i < x.files.length; i++) {
-//                var reader = new FileReader();
-//				reader.readAsText(x.files[0], "UTF-8");
-//				reader.onload = function (evt) {
-//					ParseAnnotationsForVideoIDIntoJSON(evt.target.result, function(annoData) {
-//						var vidTime = document.getElementById('vid_time');
-//						var vidTimeLabel = document.getElementById('vid_time_label');
-//						
-//						window.bnsCurrentVidTime = vidTime.value;
-//						
-//						BlockOutAnnotations(annoData);
-//						
-//						vidTime.oninput = function() {
-//							window.bnsCurrentVidTime = vidTime.value;
-//							vidTimeLabel.innerHTML = vidTime.value + ' seconds';
-//							RenderAnnotations(annoData);
-//						};
-//					});
-//				}
-//				reader.onerror = function (evt) {
-//					console.log("Splits file could not be parsed -- Is this a version 1.7.0 file? Is it XML?");
-//				}
-//            }
-//        }
-//    }
-//}
+// Barack, Paper, Scissor Level 1 Start: l2mcdS6ioo8
+// Interactive shooter: iCnlAC4OM38
 
-// l2mcdS6ioo8
-// iCnlAC4OM38
-
-function LoadUpVideo(videoID) {
+function LoadUpVideo(videoID, time) {
 	
-	var xhr = new XMLHttpRequest();
+	if (window.bnsCurrentVidID === undefined || window.bnsCurrentVidID !== videoID) {
+		var xhr = new XMLHttpRequest();
 
-	xhr.open("GET", "/anno/" + videoID);
-	xhr.onreadystatechange = function () {
-	  if(xhr.readyState === 4 && xhr.status === 200) {
-		ParseAnnotationsForVideoIDIntoJSON(xhr.responseText, function(annoData) {
-				console.log(annoData);
-				var vidTime = document.getElementById('vid_time');
-				var vidTimeLabel = document.getElementById('vid_time_label');
-				
-				BlockOutAnnotations(annoData);
-				
-				setInterval(function() {					
-					var currentTime = 0;
-					if (window.bnsYTPlayer !== null && window.bnsYTPlayer !== undefined && window.bnsYTPlayer.getCurrentTime !== undefined) {
-						currentTime = window.bnsYTPlayer.getCurrentTime();
-					}
+		xhr.open("GET", "/anno/" + videoID);
+		xhr.onreadystatechange = function () {
+		  if(xhr.readyState === 4 && xhr.status === 200) {
+			ParseAnnotationsForVideoIDIntoJSON(xhr.responseText, function(annoData) {
+					console.log(annoData);
+					var vidTime = document.getElementById('vid_time');
+					var vidTimeLabel = document.getElementById('vid_time_label');
+					
+					BlockOutAnnotations(annoData);
+					
+					setInterval(function() {					
+						var currentTime = 0;
+						if (window.bnsYTPlayer !== null && window.bnsYTPlayer !== undefined && window.bnsYTPlayer.getCurrentTime !== undefined) {
+							currentTime = window.bnsYTPlayer.getCurrentTime();
+						}
 
-					RenderAnnotations(annoData, currentTime);
-				}, 100);
-			});
-	  }
-	};
-	xhr.send();
+						RenderAnnotations(annoData, currentTime);
+					}, 100);
+				});
+		  }
+		};
+		xhr.send();
+	}
+	
+	// This checks if the videoID in  the URL is different internally, so shouldn't cause spurious loading
+	PlayYTVideo(videoID, time);
+	
+	window.bnsCurrentVidID = videoID;
 	
 	// TODO: Also set Youtube Embed URL
-	PlayYTVideo(videoID);
+	
 }
 
 
 
 window.onload = function() {
-	LoadUpVideo('l2mcdS6ioo8')
+	LoadUpVideo('iCnlAC4OM38', null)
 };
 
 function OnAnnotationEnableBox() {
