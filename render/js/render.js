@@ -174,7 +174,6 @@ function BlockOutAnnotations(annoData) {
 		if (anno.seg !== undefined) {			
 			var annotationElem = document.createElement('div');
 			
-			console.log("anno id: " + anno.id + " (type = '" + anno.type + "')");
 			annoIDToHTMLMap[anno.id] = annotationElem;
 			
 			
@@ -210,7 +209,6 @@ function BlockOutAnnotations(annoData) {
 							}
 						
 							annotationElem.onclick = function() {
-								console.log('anno type: ' + anno.type);
 								AnnotationNavigate(action.link);
 							};
 						}
@@ -303,11 +301,8 @@ function RenderAnnotations(annoData, currentTime) {
 					continue;
 				}
 				
-				console.log(anno);
 				if (anno.seg.timingShow) {
-					console.log('FFF');
 					if (currentTime > anno.seg.startTime && currentTime <= anno.seg.endTime) {
-						console.log('ABJSBHJASGHBAHGJHABGD');
 						annotationElem.style.display = 'block';
 					} else {
 						annotationElem.style.display = 'none';
