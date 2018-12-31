@@ -5,7 +5,7 @@ _NOTE:_ None of the information in this document was obtained by looking at the 
 
 Annotations files looks something like:
 
-```
+```xml
 <document>
 <annotations>
 	<annotation ...>...</annotation>
@@ -45,7 +45,7 @@ anchoredRegion elements also have the attributes `sx` and `sy`, which control wh
 
 An example rect-type movingRegion would be as follows:
 
-```
+```xml
 <movingRegion type="rect">
 	<rectRegion x="33.33333" y="0.000" w="33.33333" h="100.00" t="0:02:03.25"/>
 	<rectRegion x="33.33333" y="0.000" w="33.33333" h="100.00" t="0:02:17.0"/>
