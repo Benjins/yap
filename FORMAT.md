@@ -22,14 +22,14 @@ The annotation element can have a few attributes:
 	
 - _id_: An id for the annotation, unique within the file, though doesn't seem like enough bits to be globally unique
 - _type_: A broad category for the annotation. There are:
-	    - _text_
-		- _highlight_ (there are several things called highlight, it may get confusing)
+  - _text_
+  - _highlight_ (there are several things called highlight, it may get confusing)
 - _style_: A sub-category for text-type annotations. These are the categories most people are familiar within
-	    - _anchored_: Speech bubbles
-		- _highlightText_: Text that shows up on mouse over of another annotation (such as a highlight)
-		- _label_: An annotation that has a box, and text that shows up on mouse over (but it looks different than highlightText, and is a single annotation)
-		- _popup_: A basic coloured square with some text that shows up
-		- _title_: Another primarily text-based annotation (??? This one seems redundant to me)
+  - _anchored_: Speech bubbles
+  - _highlightText_: Text that shows up on mouse over of another annotation (such as a highlight)
+  - _label_: An annotation that has a box, and text that shows up on mouse over (but it looks different than highlightText, and is a single annotation)
+  - _popup_: A basic coloured square with some text that shows up
+  - _title_: Another primarily text-based annotation (??? This one seems redundant to me)
 
 ## Segments and Positioning
 		
