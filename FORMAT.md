@@ -21,16 +21,22 @@ Annotations files looks something like:
 The annotation element can have a few attributes:
 	
 - _id_: An id for the annotation, unique within the file, though doesn't seem like enough bits to be globally unique
+- _author_: An optional attribute giving the username of the person who added the annotation. Some videos had public annotation editing enabled, and this could keep track of who added which annotation.
 - _type_: A broad category for the annotation. There are:
-  - _text_
+  - _text_: annotations with text. Well, not _all_ of them, but most.
   - _highlight_ (there are several things called highlight, it may get confusing)
-- _style_: A sub-category for text-type annotations. These are the categories most people are familiar within
+  - _branding_: A newfangled type of annotation that does
+  - _card_: Fancy new end-card annotations
+  - _drawer_: little icons in the corner that expand when moused over...like a drawer
+- _style_: A sub-category for annotations. These are the sub-categories for text annotations, which most people are familiar with.
   - _anchored_: Speech bubbles
   - _highlightText_: Text that shows up on mouse over of another annotation (such as a highlight)
   - _label_: An annotation that has a box, and text that shows up on mouse over (but it looks different than highlightText, and is a single annotation)
   - _popup_: A basic coloured square with some text that shows up
   - _title_: Another primarily text-based annotation (??? This one seems redundant to me)
 
+Since branding, card, and drawer annotations seem to all be sticking around, less focus will be given to them for preservation's sake.
+  
 ## Segments and Positioning
 		
 A child of any visible annotations is the `<segment>` element. The segment contains both positional information, and timing information. A segment consists of a single child `<movingRegion>` element. The movingRegion element has an attribute `type` that can be either `anchored` or `rect`. Anchored are used for anchored-style annotations (speech bubbles).
@@ -59,6 +65,8 @@ While it may be possible that annotations can be animated, I have not seen any e
 An annotation with the time set to 'never' will not show up based on time, but may be made visible by other things, like mousing over another annotation.
 	
 Note that the "video frame" _appears_ to be	solely the rendered video. I.e, for a video with a non-standard aspect ratio that ends up being letterboxed, the letterboxing/black bars do not count as part of the video frame.
+
+Segments can also have the `spaceRelative` attribute, which will be the id of another annotation, which the X/Y coords are relative to, rather than the video frame.
 
 ## Text
 
