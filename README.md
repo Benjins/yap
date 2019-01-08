@@ -8,7 +8,7 @@ Here are the main parts to this project:
  - _anno.py:_ A python script ~that builds off of [youtube-dl](https://rg3.github.io/youtube-dl/)~ to download annotations ~and metadata~, but not the video files or any other data for videos. It also parses out any links to other videos in those annotations, and downloads them. This is useful for interactive videos based on annotations, which may have dozens of videos linking to each other in a tree/graph like fashion.
  - _render/:_ HTML/Javascript that can render the annotations on top of a YouTube embed. Used to ensure that annotations are downloaded properly.
  - _experimental/_: Some experimental scripts that won't work out of the box, but that I've found to be much more efficient, as they use asynchronous IO (the `dl_annotations.py` script pipes into the `write_to_db.py` script). 
- - _crawl\_user.py_: A python script (depends on curl atm) for finding all the public video URLS of a particular uploader.
+ - _crawl\_user.py_: A python script for finding all the public video URLS of a particular uploader (OR playlist...naming, I know).
  - _crawl\_related.py_: A python script that given a set of youtube videos, produces their related videos from the sidebar.
  - _crawl\_search.py_: A python script that will deliver the videos that youtube returns in its search query for the given terms.
  

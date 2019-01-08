@@ -23,7 +23,7 @@ def ParseVideoIDFromURL(url):
 
         for param in params:
             if param.startswith('v='):
-                return param[2:]
+                return param[2:13]
 
     return None
 
