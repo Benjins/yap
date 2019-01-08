@@ -3,15 +3,15 @@
 ## And with each batch there is a "continuation" code for getting the next one (if there is one; the last batch doesn't have this code)
 ## The continuation code is sent for the next batch, and has the next continuation code, etc.
 
-## This script uses curl as a subprocess and downloads some temporary files in the working directory
-## (it doesn't have to, I just got lazy figuring out how HTTP requests work in Python :p)
-
 ## USAGE:
 ## python crawl_user.py user {SHORT_CHANNEL_NAME}
 ## (e.g. MyChannel)
 ## OR
-## python crawl_user.py url {CHANNEL_URL}
-## (e.g. https://www.youtube.com/channel/UCtt7vaXAJDG1aSFJB or so)
+## python crawl_user.py channel {CHANNEL_ID}
+## (e.g. UCtt7vaXAJDG1aSFJB or so)
+## OR
+## python crawl_user.py playlist {PLAYLIST_ID}
+## (e.g. PL13khb135hk or so)
 
 ## Will print out all Youtube video url's to stdout, which you could then feed into the anno.py script
 
