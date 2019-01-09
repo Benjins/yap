@@ -177,7 +177,8 @@ def ParsePlaylistInit(playlistID):
     
 if len(sys.argv) >= 3:
     if sys.argv[1] == 'user':
-        ParseUserInit(sys.argv[2])
+        for userID in sys.argv[2:]:
+            ParseUserInit(userID)
     elif sys.argv[1] == 'channel':
         for channelID in sys.argv[2:]:
             try:
@@ -189,7 +190,7 @@ if len(sys.argv) >= 3:
         for playlistID in sys.argv[2:]:
             ParsePlaylistInit(playlistID)
     else:
-        print("Uhhh.....come again?")
+        print("Uhhh.....come again?", file=sys.stderr)
 else:
-    print("Please see usage docs just as soon as I write them")
+    print("Please see usage docs just as soon as I write them", file=sys.stderr)
     
