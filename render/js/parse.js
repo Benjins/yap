@@ -216,6 +216,7 @@ function ParseTextAnnotationElement(annoElem, annoJS) {
 		}
 		
 		var textSubtype = annoElem.attributes.style.value;
+		annoJS['subtype'] = textSubtype;
 		
 		if (textSubtype === 'popup') {
 			annoJS['bgAlpha'] = parseFloat(appearanceElem.attributes.bgAlpha.value);

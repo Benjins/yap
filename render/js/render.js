@@ -4,8 +4,14 @@ function GetBackgroundColourForAnnotation(anno) {
 		return 'rgba(0,0,0,0)';
 	}
 	
-	var alpha = anno.bgAlpha;
-	if (alpha === undefined) {
+	var alpha = null;
+	if (anno.type === 'highlight') {
+		alpha = anno.borderAlpha;
+	} else {
+		alpha = anno.bgAlpha;
+	}
+
+	if (alpha === undefined || alpha === null) {
 		alpha = 1.0;
 	}
 	
@@ -25,7 +31,23 @@ function GetBackgroundColourForAnnotation(anno) {
 
 // TODO: Some code dup w/ above
 function GetForegroundColourForAnnotation(anno) {
-	if (anno === undefined || anno.fgColor === undefined) {
+	if (anno == undefined) {
+		console.log("GetForegroundColourForAnnotation() called on undefined!!");
+		return 'rgba(0,0,0,0)';
+	}
+	
+	// The "foreground" colour is a bit...overloaded of a term,
+	// but it's basically just the colour passed to the CSS 'color' property, as opposed to 'background'
+	// Highlight text annotations have the highlightFontColor attribute,
+	// and other text annotations have the fgColor attribute
+	var fgColHex = null;
+	if (anno.subtype === 'highlightText') {
+		fgColHex = anno.highlightFontColor
+	} else {
+		fgColHex = anno.fgColor;
+	}
+
+	if (fgColHex === undefined || fgColHex === null) {
 		return 'rgba(0,0,0,0)';
 	}
 	
@@ -39,7 +61,6 @@ function GetForegroundColourForAnnotation(anno) {
 	}
 
 	// Uggghh...may have chose wrong on that serialisation... -_-
-	var fgColHex = anno.fgColor;
 	var rgb = parseInt('0x' + fgColHex.substring(1));
 	var r = (rgb >> 16) & 0xFF;
 	var g = (rgb >> 8) & 0xFF;
@@ -191,8 +212,9 @@ function BlockOutAnnotations(annoData) {
 			} else {
 				annotationElem.style.background = 'rgba(0,0,0,0)';
 				annotationElem.style.borderWidth = anno.highlightWidth + 'px';
-				annotationElem.style.borderColor = 'rgba(255,255,255,' + anno.borderAlpha + ')';
+				annotationElem.style.borderColor = background;
 				annotationElem.style.borderStyle = 'solid';
+				annotationElem.style.color = foreground;
 			}
 			
 			if (anno.action !== undefined) {
@@ -236,6 +258,7 @@ function BlockOutAnnotations(annoData) {
 			// TODO: More responsize way of doing this? 
 			annotationElem.style.fontSize = 4.8 * anno.textSize + 'px';
 
+			console.log('anno.text: "' + anno.text + '"');
 			if (anno.text !== undefined) {
 				annotationElem.innerHTML = anno.text;
 			} else {
@@ -251,6 +274,7 @@ function BlockOutAnnotations(annoData) {
 	
 	AddBorderStyles(borderStyle, highlightCursorStyles);
 	
+	// Setup annotations that show on mouse over
 	for (var idx in annoData.annotations) {
 		// Arrrggghhhhh JavaScript why
 		(function(idx) {
@@ -357,7 +381,7 @@ function LoadUpVideo(videoID, time) {
 
 
 window.onload = function() {
-	LoadUpVideo('iCnlAC4OM38', null)
+	LoadUpVideo('SmgFruytDrc', null)
 };
 
 function OnAnnotationEnableBox() {

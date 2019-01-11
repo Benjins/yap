@@ -52,6 +52,8 @@ def GetMessageWithRetries(url, headersData={}, maxRetries = 5):
             
         except http.client.ResponseNotReady:
             conn = http.client.HTTPSConnection('www.youtube.com')
+        except http.client.RemoteDisconnected:
+            conn = http.client.HTTPSConnection('www.youtube.com')
         except Exception as e:
             traceback.print_exc()
             print("Error, got exception: '%s'" % str(e), file=sys.stderr)
@@ -181,13 +183,16 @@ if len(sys.argv) >= 3:
             ParseUserInit(userID)
     elif sys.argv[1] == 'channel':
         for channelID in sys.argv[2:]:
+            channelID = channelID.strip()
             try:
+                print('Looking up channel %s...' % channelID, file=sys.stderr)
                 ParseChannelInit(channelID)
             except Exception as e:
                 traceback.print_exc()
                 print("Error, got exception: '%s'" % str(e), file=sys.stderr)
     elif sys.argv[1] == 'playlist':
         for playlistID in sys.argv[2:]:
+            playlistID = playlistID.strip()
             ParsePlaylistInit(playlistID)
     else:
         print("Uhhh.....come again?", file=sys.stderr)
