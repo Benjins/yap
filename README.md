@@ -1,6 +1,8 @@
 ## YAP - Youtube Annotation Preservation
 ---------------
 
+## NOTE: Youtube has removed access to all annotations as of January 15. Any downloads will result in an XML file w/o legacy annotations.
+
 YouTube has decided to outlaw ~fun~annotations on their platform. This project consists of tools for people to ensure that their hard work is not lost.
 
 Here are the main parts to this project:
@@ -11,6 +13,8 @@ Here are the main parts to this project:
  - _crawl\_user.py_: A python script for finding all the public video URLS of a particular uploader (OR playlist...naming, I know).
  - _crawl\_related.py_: A python script that given a set of youtube videos, produces their related videos from the sidebar.
  - _crawl\_search.py_: A python script that will deliver the videos that youtube returns in its search query for the given terms.
+ 
+See [here](https://benjins.com/yap) for a live demo of some recovered annotations re-rendered over their source videos.
  
 There are some other resources that may be useful:
 
